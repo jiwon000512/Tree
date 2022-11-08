@@ -1,0 +1,1 @@
+a->height = getHeight(a);
