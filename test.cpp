@@ -28,6 +28,7 @@ void pluss(Node **a)
 {
     Node *b = getAVLNode(3);
     *a = b;
+    delete *a;
 }
 
 int main()

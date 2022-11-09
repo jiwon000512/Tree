@@ -16,15 +16,20 @@ struct Node
     struct Node *left;
 };
 
+void inorderBST(Node *target);
 bool insertAVL(Node **T, int newKey);
 bool insertBST(Node **T, int newKey, Node *p, Node *q, Node *st[], int &sp);
+bool deleteAVL(Node **T, int deleteKey);
+Node *deleteBST(Node **T, int deleteKey, Node **p, Node **q, Node *st[], int &sp);
+int noNodes(Node *T);
+Node *maxNode(Node *T, Node *st[], int &sp);
+Node *minNode(Node *T, Node *st[], int &sp);
 void checkBalance(Node **T, int newKey, string &rotationType, Node **p, Node **q, Node *st[], int &sp);
 void rotateTree(Node **T, string rotationType, Node **p, Node **q);
-void inorderBST(Node *target);
+void resetHB(Node **target, int stopHeight);
 
 int main()
 {
-    
     string line;
     Node *T = NULL;
     ifstream in;
@@ -37,45 +42,26 @@ int main()
             pair<string, int> p;
             p.first = line.substr(0, 1);
             p.second = stoi(line.substr(2, line.size()));
-
+            
             if (p.first == "i")
             {
                 if (!insertAVL(&T, p.second))
                 {
                     cout << p.first << ' ' << p.second << " : The key already exists" << '\n';
                 }
-                inorderBST(T);
-                cout << '\n';
-            }
-            /*
+            }        
             else if (p.first == "d")
             {
-                if (!deleteBST(T, p.second))
+                if (!deleteAVL(&T, p.second))
                 {
                     cout << p.first << ' ' << p.second << " : The key does not exist" << '\n';
                 }
             }
             inorderBST(T);
             cout << '\n';
-            */
         }
 
     }
-
-    /*
-    Node *T = NULL;
-
-    insertAVL(&T, 8);
-    insertAVL(&T, 9);
-    insertAVL(&T, 10);
-    insertAVL(&T, 2);
-    insertAVL(&T, 1);
-    insertAVL(&T, 5);
-    insertAVL(&T, 3);
-    insertAVL(&T, 6);
-    insertAVL(&T, 4);
-    inorderBST(T);
-    */
 }
 
 Node *getAVLNode(int newKey)
@@ -146,6 +132,7 @@ bool insertAVL(Node **T, int newKey)
     }
 
     cout << rotationType << ' ';
+
     return true;
 }
 
@@ -193,6 +180,175 @@ bool insertBST(Node **T, int newKey, Node *p, Node *q, Node *st[], int &sp)
     return false;
 }
 
+bool deleteAVL(Node **T, int deleteKey)
+{
+    Node *p = *T;
+    Node *q = NULL;
+    Node *st[MaxSize];
+    int sp = 0;
+
+    q = deleteBST(T, deleteKey, &p, &q, st, sp);
+    if(q == NULL)
+    {
+        return false;
+    }
+    //키가 삭제된 후 BF다시 계산
+    string rotationType;
+    checkBalance(T, deleteKey, rotationType, &p, &q, st, sp);
+
+    //불균형 수정
+    if (rotationType.compare("NO") != 0)
+    {
+        rotateTree(T, rotationType, &p, &q);
+    }
+
+    cout << rotationType << ' ';
+
+    return true;
+}
+
+Node *deleteBST(Node **T, int deleteKey, Node **p, Node **q, Node *st[], int &sp)
+{
+
+    //삭제할 노드의 위치 검색
+    while (*p != NULL && deleteKey != (*p)->key)
+    {
+        
+        *q = *p;
+        st[sp++] = *q;
+
+        if (deleteKey < (*p)->key)
+        {
+            *p = (*p)->left;
+        }
+        else
+        {
+            (*p) = (*p)->right;
+        }
+    }
+
+    //삭제할 원소가 없음
+    if (*p == NULL)
+    {
+        return NULL;
+    }
+
+    // degree : 2
+    if ((*p)->left != NULL && (*p)->right != NULL)
+    {
+        st[sp++] = (*p);
+        Node *tempNode = (*p);
+
+        if ((*p)->left->height < (*p)->right->height)
+        {
+            *p = minNode((*p)->right, st, sp);
+        }
+        else if ((*p)->left->height > (*p)->right->height)
+        {
+            *p = maxNode((*p)->left, st, sp);
+        }
+        else
+        {
+            if (noNodes((*p)->left) > noNodes((*p)->right))
+            {
+                *p = maxNode((*p)->left, st, sp);
+            }
+            else
+            {
+                *p = minNode((*p)->right, st, sp);
+            }
+        }
+
+        tempNode->key = (*p)->key;
+        (*q) = st[sp - 1];
+    }
+
+    // degree : 0 or 1
+    if ((*p)->left == NULL && (*p)->right == NULL)
+    {
+        if (*q == NULL)
+        {
+            T = NULL;
+        }
+        else if ((*q)->left == *p)
+        {
+            (*q)->left = NULL;
+        }
+        else
+        {
+            (*q)->right = NULL;
+        }
+    }
+    else
+    {
+        if ((*p)->left != NULL)
+        {
+            if (*q == NULL)
+            {
+                *T = (*T)->left;
+            }
+            else if ((*q)->left == *p)
+            {
+                (*q)->left = (*p)->left;
+            }
+            else
+            {
+                (*q)->right = (*p)->left;
+            }
+        }
+        else
+        {
+            if (*q == NULL)
+            {
+                *T = (*T)->right;
+            }
+            else if ((*q)->left == *p)
+            {
+                (*q)->left = (*p)->right;
+            }
+            else
+            {
+                (*q)->right = (*p)->right;
+            }
+        }
+    }
+
+    return *p;
+}
+
+int noNodes(Node *T)
+{
+    if (T == NULL)
+    {
+        return 0;
+    }
+    return noNodes(T->left) + noNodes(T->right) + 1;
+}
+
+Node *maxNode(Node *T, Node *st[], int &sp)
+{
+    Node *max = T;
+    while (max->right != NULL)
+    {
+        st[sp++] = max;
+        max = max->right;
+    }
+
+    return max;
+}
+
+Node *minNode(Node *T, Node *st[], int &sp)
+{
+    Node *min = T;
+    while (min->left != NULL)
+    {
+        st[sp++] = min;
+        min = min->left;
+    }
+
+    return min;
+}
+
 void checkBalance(Node **T, int newKey, string &rotationType, Node **p, Node **q, Node *st[], int &sp)
 {
     Node *x = NULL;
@@ -210,13 +366,11 @@ void checkBalance(Node **T, int newKey, string &rotationType, Node **p, Node **q
                 x = (*q);
                 if (sp <= 0)
                 {
-                    // cout << newKey << ' ' << "NULL" << '\n';
                     f = NULL;
                 }
                 else
                 {
                     f = st[sp - 1];
-                    // cout <<newKey << ' ' << f->key << '\n';
                 }
             }
         }
@@ -329,11 +483,11 @@ void rotateTree(Node **T, string rotationType, Node **p, Node **q)
             a->bf = 0;
             break;
         case 1:
-            a->bf = 1;
-            b->bf = 0;
+            a->bf = 0;
+            b->bf = -1;
             break;
         case -1:
-            a->bf = -1;
+            a->bf = 1;
             b->bf = 0;
             break;
         }
@@ -351,14 +505,30 @@ void rotateTree(Node **T, string rotationType, Node **p, Node **q)
     }
     else if (a == (*q)->left)
     {
+        resetHB(T, (*q)->height);
         (*q)->left = b;
         (*q)->height = setHeight(*q);
         (*q)->bf = setBF(*q);
     }
     else if (a == (*q)->right)
     {
+        resetHB(T, (*q)->height);
         (*q)->right = b;
         (*q)->height = setHeight(*q);
         (*q)->bf = setBF(*q);
     }
+}
+
+void resetHB(Node **target, int stopHeight)
+{
+    if((*target)->height < stopHeight)
+    {
+        return;
+    }
+    Node *left = (*target)->left;
+    Node *right = (*target)->right;
+    resetHB(&left, stopHeight);
+    resetHB(&right, stopHeight);
+    (*target)->height = setHeight(*target);
+    (*target)->bf = setBF(*target);
 }
