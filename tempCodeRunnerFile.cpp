@@ -1,1 +1,1 @@
-a->height = getHeight(a);
+bf
