@@ -2,5 +2,5 @@
 
 Binary Search Tree, 
 AVLTree, 
-BTree(진행중)
+BTree
 구현
