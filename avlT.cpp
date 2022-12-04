@@ -559,6 +559,6 @@ void resetHB(Node **target, int stopHeight)
     Node *right = (*target)->right;
     resetHB(&left, stopHeight);
     resetHB(&right, stopHeight);
-    (*target)->height = setHeight(*target);
+	(*target)->height = setHeight(*target);
     (*target)->bf = setBF(*target);
 }

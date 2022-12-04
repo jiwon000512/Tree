@@ -45,7 +45,7 @@ bool searchPath(Node **T, int m, int key, Node *st[], int &sp)
     return false;
 }
 
-void insertKey(Node **T, int m, Node **x, Node **y, int newKey)
+void insertKey(Node **T, int m, Node **x, Node *y, int newKey)
 {
     int i = (*x)->n - 1;
     while (i >= 0 && newKey < (*x)->K[i])
@@ -55,7 +55,7 @@ void insertKey(Node **T, int m, Node **x, Node **y, int newKey)
         i--;
     }
     (*x)->K[i + 1] = newKey;
-    (*x)->P[i + 2] = *y;
+    (*x)->P[i + 2] = y;
     (*x)->n = (*x)->n + 1;
 }
 
@@ -63,7 +63,7 @@ Node *splitNode(Node **T, int m, Node **x, Node *y, int &newKey)
 {
     Node *tempNode = new Node;
     memcpy(tempNode, *x, sizeof(Node));
-    insertKey(T, m, &tempNode, &y, newKey);
+    insertKey(T, m, &tempNode, y, newKey);
     int centerKey = tempNode->K[tempNode->n / 2];
 
     (*x)->n = 0;
@@ -127,7 +127,7 @@ void redistributeKeys(Node **T, int m, Node **x, Node **y, int bestSib)
     int i = 0;
     while ((*y)->P[i] != (*x))
         i++;
-
+    
     Node *bestNode = (*y)->P[bestSib];
     if (bestSib < i)
     {
@@ -142,7 +142,7 @@ void redistributeKeys(Node **T, int m, Node **x, Node **y, int bestSib)
     else
     {
         int firstKey = bestNode->K[0];
-        insertKey(T, m, x, NULL, (*y)->K[i - 1]);
+        insertKey(T, m, x, NULL, (*y)->K[i]);
         (*x)->P[(*x)->n] = bestNode->P[0];
         bestNode->P[0] = bestNode->P[1];
         deleteKey(T, m, &bestNode, firstKey);
@@ -210,7 +210,7 @@ bool insertBT(Node **T, int m, int newKey)
     {
         if (x->n < m - 1)
         {
-            insertKey(T, m, &x, &y, newKey);
+            insertKey(T, m, &x, y, newKey);
             finished = true;
         }
         else
@@ -248,7 +248,6 @@ bool deleteBT(Node **T, int m, int oldKey)
 
     Node *x = st[--sp];
     Node *y = NULL;
-
     bool isTerminalNode = true;
     for (int i = 0; i < x->n; i++)
     {
@@ -279,6 +278,7 @@ bool deleteBT(Node **T, int m, int oldKey)
 
     bool finished = false;
     deleteKey(T, m, &x, oldKey);
+    
 
     if (sp > 0)
         y = st[--sp];
@@ -292,10 +292,11 @@ bool deleteBT(Node **T, int m, int oldKey)
         else
         {
             int bestSib = bestSibling(T, m, x, y);
-
+        
             if (y->P[bestSib]->n > (m - 1) / 2)
             {
                 redistributeKeys(T, m, &x, &y, bestSib);
+
                 finished = true;
             }
             else
@@ -337,7 +338,29 @@ int main()
     insertBT(&T, 3, 5);
     insertBT(&T, 3, 6);
     insertBT(&T, 3, 7);
-    deleteBT(&T, 3, 4);
     deleteBT(&T, 3, 2);
-    inorderBT(T, 3);
+    deleteBT(&T, 3, 7);
+    deleteBT(&T, 3, 3);
+    deleteBT(&T, 3, 1);
+    // inorderBT(T, 3);
+    
+    //단말노드가 아예 사라지는 상황 버그
+
+    for (int i = 0; i < T->P[0]->n; i++)
+        cout << "i: " << i << ' ' << " key: " << T->P[0]->K[i] << '\n';
+    cout << " n:    " << T->P[0]->n << '\n';
+    cout << '\n';
+    for (int i = 0; i < T->n; i++)
+        cout << "i: " << i << ' ' << " key: " << T->K[i] << '\n';
+    cout << " n:    " << T->n << '\n';
+    cout << '\n';
+    for (int i = 0; i < T->P[1]->n; i++)
+        cout << "i: " << i << ' ' << " key: " << T->P[1]->K[i] << '\n';
+    cout << " n:    " << T->P[1]->n << '\n';
+    cout << '\n';
+    /*
+    for (int i = 0; i < T->P[2]->n; i++)
+        cout << "i: " << i << ' ' << " key: " << T->P[2]->K[i] << '\n';
+    cout << " n:    " << T->P[2]->n << '\n';
+    */
 }

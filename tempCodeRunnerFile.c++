@@ -1,0 +1,1 @@
+cout << tempNode->n << '\n';
